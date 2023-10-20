@@ -7,7 +7,7 @@ async function main() {
   const app = express();
   app.use(
     cors({
-      origin: "http://localhost:5173", // Replace with the actual origin of your frontend
+      origin: true, // Replace with the actual origin of your frontend
       methods: ["GET", "POST"], // Adjust as needed
       credentials: true, // Enable credentials (e.g., cookies)
     })
