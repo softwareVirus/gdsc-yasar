@@ -1,0 +1,39 @@
+.list-container {
+    width: 100%;
+    max-width: 25rem;
+    background-color: white;
+    border-radius: 0.9375rem;
+    height: 30rem;
+}
+
+.list-header {
+    width: 100%;
+    display: flex;
+    font-weight: 700;
+}
+
+.list-ranking {
+    box-sizing: border-box;
+    width: 20%;
+    padding: 1rem 1rem;
+    text-align: center;
+}
+
+.list-username {
+    box-sizing: border-box;
+    width: 80%;
+    padding: 1rem 1rem;
+    text-align: center;
+}
+
+.user-card {
+    width: 100%;
+    border-top: solid 1px #00000088;
+    display: flex;
+}
+
+.user-container {
+    border-bottom: solid 1px #00000088;
+    overflow: auto;
+    max-height: calc(100% - 3rem);
+}

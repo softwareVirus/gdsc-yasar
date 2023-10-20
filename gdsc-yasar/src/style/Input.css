@@ -1,0 +1,49 @@
+.input-container {
+  max-width: 21.3125rem; /* 341px / 16px = 21.3125rem */
+  width: 95%;
+  height: 5rem; /* 80px / 16px = 5rem */
+  border-radius: 4.5rem; /* 40px / 16px = 2.5rem */
+  border: double 0.5rem transparent; /* 8px / 16px = 0.5rem */
+  background: linear-gradient(white, white),
+    linear-gradient(to right, #ea4335, #4285f4, #34a853, #fbbc05);
+  background-origin: border-box;
+  background-clip: content-box, border-box;
+  display: flex;
+  align-items: center;
+}
+
+.username-input {
+  max-width: 32.26669rem !important;
+}
+
+.input-style {
+  width: 100%;
+  outline: none;
+  border: none;
+  background: white;
+  border-radius: 4.5rem; /* 40px / 16px = 2.5rem */
+  padding: 0.625rem; /* 10px / 16px = 0.625rem */
+  text-align: center;
+  font-size: 3rem; /* 48px / 16px = 3rem */
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.input-style::placeholder {
+  color: rgba(0, 0, 0, 0.33);
+}
+
+@media (max-width: 1200px) {
+  .input-style {
+    font-size: 1.75rem;
+  }
+
+  .input-container {
+    width: 90%;
+    height: 4rem;
+  }
+
+  .code-input {
+    max-width: 17rem;
+  }
+}

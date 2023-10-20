@@ -1,0 +1,34 @@
+.navbar-container {
+  width: 100%;
+  min-height: 4rem;
+  box-sizing: border-box;
+  padding-left: 2.75rem;
+  padding-right: 2.75rem;
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-color-primary);
+}
+
+.navbar-logo {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 1.125rem;
+}
+
+.navbar-logo > img {
+  height: 45px;
+}
+
+@media (max-width: 600px) {
+  .navbar-logo > img {
+    width: 2.6875rem;
+    height: 2.25rem;
+  }
+  .navbar-logo > h3 {
+    font-size: 1.4375rem;
+  }
+  .navbar-logo {
+    margin: 0 auto;
+  }
+}
