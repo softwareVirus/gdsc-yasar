@@ -1,11 +1,11 @@
 import React from "react";
 import "../style/Input.css"; // Import the CSS file
 
-const Input = ({ className, placeholder, maxLength, name, onChange }) => {
+const Input = ({ className, placeholder, maxLength, name, onChange, type }) => {
   return (
-    <div className={"input-container "+className}>
+    <div className={"input-container " + className}>
       <input
-        type="text"
+        type={type ? type : "text"}
         name={name}
         onChange={onChange}
         onFocus={(e) => (e.target.placeholder = "")}
@@ -13,6 +13,7 @@ const Input = ({ className, placeholder, maxLength, name, onChange }) => {
         className="input-style"
         placeholder={placeholder}
         maxLength={maxLength}
+        size={maxLength + 4}
       />
     </div>
   );

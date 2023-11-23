@@ -1,5 +1,5 @@
-import React, { createContext, useState, useContext } from "react";
-
+import React, { createContext, useState, useContext, useEffect } from "react";
+import axios from "axios";
 const GameContext = createContext();
 
 export const useGame = () => {
@@ -10,33 +10,181 @@ const GameContextProvider = ({ children }) => {
   const [gameState, setGameState] = useState(() => {
     // Initialize the user state from local storage if available
     const storedUser = localStorage.getItem("game");
-    return storedUser
-      ? JSON.parse(storedUser)
-      : {
-          room: null,
-          dashboard: [],
-          numberOfQuestions: 15,
-          currentQuestion: null,
-          hashkey: null,
-          questionNumber: 0,
-          answer: 2
-        };
+    return {
+      _id: null,
+      roomCode: null,
+      participants: [],
+      active: false,
+      isGameStarted: false,
+      questions: [],
+      currentQuestionNumber: null,
+      questionTime: null,
+      owner: null,
+    };
   });
 
   const updateGameState = (newState) => {
-    console.log(newState)
-    setGameState({ ...gameState, ...newState });
+    console.log(newState);
+    setGameState({ ...gameState, ...newState/*, participants: [
+      {
+        user: {
+          _id: "asdsadsa",
+          firstName: "asdasdasdas",
+          lastName: "asdasdsadsds",
+          email: "asdsaddadsdsdsa",
+          joinedGame: null,
+          createdGame: null,
+        },
+        score: 0,
+        ranking: 0
+      },{
+        user: {
+          _id: "asdsadsa",
+          firstName: "asdasdasdas",
+          lastName: "asdasdsadsds",
+          email: "asdsaddadsdsdsa",
+          joinedGame: null,
+          createdGame: null,
+        },
+        score: 0,
+        ranking: 0
+      },{
+        user: {
+          _id: "asdsadsa",
+          firstName: "asdasdasdas",
+          lastName: "asdasdsadsds",
+          email: "asdsaddadsdsdsa",
+          joinedGame: null,
+          createdGame: null,
+        },
+        score: 0,
+        ranking: 0
+      },{
+        user: {
+          _id: "asdsadsa",
+          firstName: "asdasdasdas",
+          lastName: "asdasdsadsds",
+          email: "asdsaddadsdsdsa",
+          joinedGame: null,
+          createdGame: null,
+        },
+        score: 0,
+        ranking: 0
+      },{
+        user: {
+          _id: "asdsadsa",
+          firstName: "asdasdasdas",
+          lastName: "asdasdsadsds",
+          email: "asdsaddadsdsdsa",
+          joinedGame: null,
+          createdGame: null,
+        },
+        score: 0,
+        ranking: 0
+      },{
+        user: {
+          _id: "asdsadsa",
+          firstName: "asdasdasdas",
+          lastName: "asdasdsadsds",
+          email: "asdsaddadsdsdsa",
+          joinedGame: null,
+          createdGame: null,
+        },
+        score: 0,
+        ranking: 0
+      },{
+        user: {
+          _id: "asdsadsa",
+          firstName: "asdasdasdas",
+          lastName: "asdasdsadsds",
+          email: "asdsaddadsdsdsa",
+          joinedGame: null,
+          createdGame: null,
+        },
+        score: 0,
+        ranking: 0
+      },{
+        user: {
+          _id: "asdsadsa",
+          firstName: "asdasdasdas",
+          lastName: "asdasdsadsds",
+          email: "asdsaddadsdsdsa",
+          joinedGame: null,
+          createdGame: null,
+        },
+        score: 0,
+        ranking: 0
+      },{
+        user: {
+          _id: "asdsadsa",
+          firstName: "asdasdasdas",
+          lastName: "asdasdsadsds",
+          email: "asdsaddadsdsdsa",
+          joinedGame: null,
+          createdGame: null,
+        },
+        score: 0,
+        ranking: 0
+      },{
+        user: {
+          _id: "asdsadsa",
+          firstName: "asdasdasdas",
+          lastName: "asdasdsadsds",
+          email: "asdsaddadsdsdsa",
+          joinedGame: null,
+          createdGame: null,
+        },
+        score: 0,
+        ranking: 0
+      },{
+        user: {
+          _id: "asdsadsa",
+          firstName: "asdasdasdas",
+          lastName: "asdasdsadsds",
+          email: "asdsaddadsdsdsa",
+          joinedGame: null,
+          createdGame: null,
+        },
+        score: 0,
+        ranking: 0
+      },{
+        user: {
+          _id: "asdsadsa",
+          firstName: "asdasdasdas",
+          lastName: "asdasdsadsds",
+          email: "asdsaddadsdsdsa",
+          joinedGame: null,
+          createdGame: null,
+        },
+        score: 0,
+        ranking: 0
+      },{
+        user: {
+          _id: "asdsadsa",
+          firstName: "asdasdasdas",
+          lastName: "asdasdsadsds",
+          email: "asdsaddadsdsdsa",
+          joinedGame: null,
+          createdGame: null,
+        },
+        score: 0,
+        ranking: 0
+      }
+    ] */});
     localStorage.setItem("game", JSON.stringify(newState));
   };
 
   const clearGameState = () => {
     setGameState({
-      room: null,
-      dashboard: [],
-      numberOfQuestions: null,
-      currentQuestion: null,
-      hashkey: null,
-      questionNumber: 0,
+      _id: null,
+      roomCode: null,
+      participants: [],
+      active: false,
+      isGameStarted: false,
+      questions: [],
+      owner: null,
+      currentQuestionNumber: null,
+      questionTime: null,
     });
   };
 

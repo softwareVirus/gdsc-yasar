@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
-
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 const UserContext = createContext();
 
 export const useUser = () => {
@@ -9,12 +10,16 @@ export const useUser = () => {
 const UserContextProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     // Initialize the user state from local storage if available
-    const storedUser = localStorage.getItem("user");
-    return storedUser
-      ? JSON.parse(storedUser)
-      : { admin: false, username: null, ranking: 0 };
+    return {
+      _id: null,
+      firstName: null,
+      lastName: null,
+      email: null,
+      joinedGame: null,
+      createdGame: null,
+    };
   });
-
+  console.log(user);
   const updateUser = (newUser) => {
     console.log(newUser);
     setUser({ ...user, ...newUser });
@@ -22,15 +27,14 @@ const UserContextProvider = ({ children }) => {
 
   const clearUser = () => {
     setUser({
-      isAdmin: false,
-      username: "",
-      ranking: 0,
+      firstName: null,
+      lastName: null,
+      email: null,
+      joinedGame: null,
+      createdGame: null,
+      _id: null,
     });
   };
-  useEffect(() => {
-    // Save the user state to local storage whenever it changes
-    localStorage.setItem("user", JSON.stringify(user));
-  }, [user]);
   return (
     <UserContext.Provider value={{ user, updateUser, clearUser }}>
       {children}

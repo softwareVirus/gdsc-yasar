@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Form,
@@ -9,17 +10,21 @@ import Input from "./Input";
 import { socket } from "../socket";
 import Button from "./Button";
 import { useUser } from "../context/userProvider";
-import { Navigate  } from "react-router-dom";
+import axios from "axios";
+import { Navigate } from "react-router-dom";
+import { useGame } from "../context/gameProvider";
+import { redirectLocation }  from '../utils/routerHelper'
+
 function LoginPage() {
-  const [username, setUsername] = useState("");
-  const [roomCode, setRoomCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState(false);
-  const { updateUser } = useUser()
+  const { updateUser } = useUser();
+  const { gameState } = useGame();
   const navigate = useNavigate();
   const handleSubmit = async (e) => {
-    console.log(username);
     // Validate our form inputs and return validation errors via useActionData()
-    if (!username) {
+    if (!email && !password) {
       return {
         error: "You must provide a username to log in",
       };
@@ -27,31 +32,19 @@ function LoginPage() {
     let tmp;
     // Sign in and redirect to the proper destination if successful.
     try {
-      console.log("here");
-      socket.emit("odaKatil", {
-        username,
-        odaAdi: roomCode,
+      const response = await axios.post("/auth/login/password", {
+        email,
+        password,
       });
-      tmp = await new Promise((resolve, reject) => {
-        socket.on("siralama", (data) => {
-          updateUser({
-            username,
-            ranking: data,
-            admin: data === 0,
-          });
-          resolve({
-            username,
-            ranking: data,
-            admin: data === 0,
-          });
-        });
-        socket.on("hataliAd",() => {
-          setError(true)
-          console.log(error)
-          setInterval(() => {
-            setError(false)
-          },1500);
-        })
+      if(response.status === 400)
+        throw new Error(response.message);
+      tmp = {
+        email,
+        isAdmin: response.data.isAdmin
+      };
+      updateUser({
+        email,
+        isAdmin: response.data.isAdmin,
       });
     } catch (error) {
       console.log(error);
@@ -63,44 +56,42 @@ function LoginPage() {
       };
     }
 
-    let redirectTo = tmp.username
-      ? tmp.admin
-        ? "/admin"
-        : "/wait"
-      : null;
+    let redirectTo = redirectLocation(tmp, gameState)
     console.log(redirectTo);
-    return navigate(redirectTo)
+    return navigate(redirectTo);
   };
   return (
-    <div>
-      <div className="layout">
-        <Input
-          maxWidth={32.26669}
-          placeholder="NICKNAME GİRİN"
-          maxLength={14}
-          name={"nickname"}
-          className="username-input"
-          onChange={(e) => {
-            setUsername(e.target.value);
-          }}
-        />
-        <Input
-          maxWidth={21.3125}
-          placeholder="KODU GİRİN"
-          maxLength={6}
-          name={"code"}
-          className="code-input"
-          onChange={(e) => {
-            setRoomCode(e.target.value);
-          }}
-        />
-        <Button content={"Oyuna Katıl"} className={"primary-button"} onClick={handleSubmit} />
-        {
-          error && 
+    <div className="login-container">
+      <div className="login-hero">
+        <div className="login-hero-thumbnail">
+          <img src="/src/assets/v-color.png" />
+        </div>
+
+        <div className="form-container">
+          <h1>Log in</h1>
           <div>
-            Try Different Name
+            <div className="form-input-container">
+              <input
+                placeholder="Email"
+                type="email"
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="form-input-container">
+              <input
+                placeholder="Password"
+                type="password"
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <Button
+              content={"Giriş Yap"}
+              className={"primary-form-button"}
+              onClick={handleSubmit}
+            />
           </div>
-        }
+          {error && <div>Try Different Name</div>}
+        </div>
       </div>
     </div>
   );

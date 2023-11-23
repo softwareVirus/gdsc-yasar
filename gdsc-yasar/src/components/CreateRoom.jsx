@@ -11,16 +11,20 @@ import Button from "./Button";
 import { useGame } from "../context/gameProvider";
 import { useUser } from "../context/userProvider";
 import { socket } from "../socket";
+import axios from "axios";
+import { redirectLocation } from "../utils/routerHelper";
 
 function CreateRoom() {
   const [code, setCode] = useState(null);
-  const gameContext = useGame()
-  const userContext = useUser()
+  const { updateGameState } = useGame();
+  const userContext = useUser();
+
   const navigate = useNavigate();
-  const handleClick = (e) => {
-    const { user } = userContext;
+  const handleClick = async (e) => {
+    const { user, updateUser } = userContext;
+    console.log(code, user);
     // Validate our form inputs and return validation errors via useActionData()
-    if (!code) {
+    if (code === null) {
       return {
         error: "You must provide a username to log in",
       };
@@ -28,24 +32,27 @@ function CreateRoom() {
 
     // Sign in and redirect to the proper destination if successful.
     try {
-      socket.emit("odaKatil", {
-        username: user.username,
-        odaAdi: code,
+      console.log(code, user);
+      const response = await axios.post("/game/create_game", {
+        roomCode: code,
       });
-      socket.on("odaOluştur", (data) => {
-        gameContext.updateGameState(data);
-        navigate("/admin/panel");
-      });
+      console.log(response.data, user);
+      if (response.status == 400) throw new Error(response.message);
+      updateGameState(response.data.game);
+      updateUser(response.data.user);
+      console.log(response.data, user);
+      let redirectTo = redirectLocation(user, response.data);
+      return navigate(redirectTo);
     } catch (error) {
+      console.log(code, user, error);
       // Unused as of now but this is how you would handle invalid
       // username/password combinations - just like validating the inputs
       // above
-      console.log(error)
+      console.log(error);
       return {
         error: "Invalid login attempt",
       };
     }
-
   };
   return (
     <div>

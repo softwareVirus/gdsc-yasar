@@ -5,37 +5,32 @@ import { useNavigate } from "react-router-dom";
 
 const Wait = () => {
   const { gameState, updateGameState } = useGame();
-  const navigate = useNavigate();
-  const handleSoruGeldiSocket = (data) => {
-    console.log("scoket");
+  const handleNextQuestionSocket = (data) => {
+    console.log("scoket",data);
     updateGameState(data);
     //if (data.currentQuestion !== null) navigate("/gameroom");
   };
   useEffect(() => {
     console.log(gameState, "here");
 
-    socket.on("sorugeldi", handleSoruGeldiSocket);
-    socket.on("bitti", () => {
+    socket.on("next question", handleNextQuestionSocket);
+    socket.on("game finished", () => {
       socket.emit("dashboard");
-      socket.on("getDashboard", (data) => {
-        updateGameState();
+      socket.on("get dashboard", (data) => {
+        updateGameState(data);
       });
     });
     return () => {
-      socket.off("sorugeldi", handleSoruGeldiSocket);
+      socket.off("next question", handleNextQuestionSocket);
+      socket.off("game finished");
+      socket.off("get dashboard")
     };
   }, []);
   return (
     <div className="wait-panel">
-      <div className="wait-first">
-        <div className="wait-red"></div>
-        <div className="wait-blue"></div>
+      <div className="wait-message">
+        <h2>WAIT QUESTION</h2>
       </div>
-      <div className="wait-first">
-        <div className="wait-green"></div>
-        <div className="wait-yellow"></div>
-      </div>
-      <div className="wait-message">WAIT QUESTION</div>
     </div>
   );
 };

@@ -52,7 +52,7 @@ function GameDashboard() {
                 )
                 .map((header, i) => (
                   <td key={header + "indexasdadadas"} style={tdStyle}>
-                    {item[header]}
+                    {header == 'ranking' ? i + 1: item[header]}
                   </td>
                 ))}
             </tr>

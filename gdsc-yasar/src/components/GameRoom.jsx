@@ -12,23 +12,39 @@ import { useGame } from "../context/gameProvider";
 import { useUser } from "../context/userProvider";
 import rankingLogo from "../assets/image-removebg-preview (1).png";
 import { socket } from "../socket";
+import axios from "axios";
+import bcrypt from "../utils/bcrypt";
+
 const GameRoom = () => {
   const { gameState, updateGameState } = useGame();
-  const { user } = useUser();
-  const navigate = useNavigate();
-  const [countdownDuration, setCountdownDuration] = useState(() => {
-    let value = localStorage.getItem("time");
-    return value !== null ? parseInt(value) : 10;
-  });
-  console.log(countdownDuration, gameState.currentQuestion);
+  const { user, updateUser } = useUser();
+  /*console.log(
+    new Date(),
+    new Date(
+      new Date(gameState.questionTime).toLocaleString("en-US", {
+        timeZone: "Africa/Addis_Ababa",
+      })
+    )
+  );*/
+  const [timerExpired, setTimerExpired] = useState(false);
+  const [countdownDuration, setCountdownDuration] = useState(
+    10 -
+      (new Date().getTime() -
+        new Date(
+          new Date(gameState.questionTime).toLocaleString("en-US", {
+            timeZone: "Africa/Addis_Ababa",
+          })
+        ).getTime()) /
+        1000
+  );
   const [isAnswering, setIsAnswering] = useState(
-    countdownDuration == 0 && gameState.currentQuestion !== null
+    countdownDuration == 0 &&
+      gameState.questions[gameState.currentQuestionNumber - 1] !== null
   );
   const [selectedOption, setSelectedOption] = useState(() => {
     let selected = localStorage.getItem("option");
     return selected != null ? JSON.parse(selected) : null;
   });
-  const [timerExpired, setTimerExpired] = useState(false);
   const handleSelection = (index) => {
     if (selectedOption === null) {
       localStorage.setItem("option", index);
@@ -36,152 +52,137 @@ const GameRoom = () => {
     }
   };
 
-  const handleGetDashboardSocket = (data) => {
-    console.log(data, "socket1");
-    let dashboard = data.map((item, index) => {
-      return {
-        ...item,
-        ranking: index+1,
-      };
-    });
-    setIsAnswering(false);
-    updateGameState({
-      ...gameState,
-      currentQuestion: null,
-      dashboard,
-    });
-    navigate(
-      gameState.numberOfQuestions !== gameState.questionNumber
-        ? "/wait"
-        : "/dashboard"
-    );
-    console.log(gameState);
+  const convertRanking = (rank) => {
+    const rankingShortNames = ["1st", "2nd", "3rd"];
+    return rank < 3 ? rankingShortNames[rank] : rank + 1 + "th";
   };
-  const handleTimerExpired = () => {
-    setCountdownDuration(0);
+
+  const generateQuestionResultClassName = (index, item) => {
+    let className = "";
+    if (selectedOption === index) className += " selected-option";
+    if (!isAnswering) return className;
+    if (
+      bcrypt.compareSync(
+        item,
+        gameState.questions[gameState.currentQuestionNumber - 1].correctAnswer
+      )
+    )
+      className += " correct-answer";
+    if (
+      selectedOption == index &&
+      !bcrypt.compareSync(
+        gameState.questions[gameState.currentQuestionNumber - 1].options[
+          selectedOption
+        ],
+        gameState.questions[gameState.currentQuestionNumber - 1].correctAnswer
+      )
+    )
+      className += " wrong-answer";
+    return className;
+  };
+
+  const handleTimerExpired = async () => {
     setIsAnswering(true);
-    let interval = setInterval(() => {
-      localStorage.setItem("time", 10);
-      console.log(
-        "here alfabbe",
-        timerExpired,
-        countdownDuration,
-        gameState,
-        selectedOption,
-        localStorage.getItem("option")
-      );
-      socket.emit("cevap", {
-        cevap:
-          localStorage.getItem("option") !== null
-            ? gameState.currentQuestion.Cevap ==
-              ["A", "B", "C", "D"].map(
-                (item) => gameState.currentQuestion[item]
-              )[parseInt(localStorage.getItem("option"))]
-            : false,
-        username: user.username,
-      });
+
+    axios.post("/game/answer_question/" + gameState._id, {
+      answer:
+        localStorage.getItem("option") !== null
+          ? gameState.questions[gameState.currentQuestionNumber - 1].options[
+              selectedOption
+            ]
+          : false,
+    });
+    let interval = setInterval(async () => {
+      /*const game = await axios.get("/game/gamestate/" + gameState._id);
+      updateGameState(game);*/
       localStorage.removeItem("option");
-      socket.emit("dashboard", gameState.dashboard);
-      socket.on("getDashboard", handleGetDashboardSocket);
       clearInterval(interval);
     }, 5000);
     setTimerExpired(false);
   };
 
-  const handleTimerUpdate = (countdown) => {
-    console.log(countdown);
-    setTimerExpired(false);
-    localStorage.setItem("time", countdown);
-    setCountdownDuration(countdown);
-  };
   useEffect(() => {
+    let interval;
+    if (countdownDuration > 0) {
+      interval = setInterval(() => {
+        setCountdownDuration((prev) => prev - 1);
+      }, 1000);
+    } else {
+      handleTimerExpired();
+    }
+    socket.on("get updated gamestate", (data) => updateGameState(data));
     // Listen for timer update events from the server
-    socket.on("timerUpdate", handleTimerUpdate);
-
-    // Listen for timer expiration events from the server
-    socket.on("timerExpired", handleTimerExpired);
 
     return () => {
-      socket.off("getDashboard", handleGetDashboardSocket);
-      socket.off("timerExpired", handleTimerExpired);
-      socket.off("timerUpdate", handleTimerUpdate);
+      clearInterval(interval);
+      socket.off("get ranking");
     };
     // The event listeners will remain active even after the component unmounts
-  }, []);
+  }, [countdownDuration]);
   return (
     <Fragment>
-      {!timerExpired && (
-        <div className={"question-container"}>
-          {isAnswering ? (
-            <Fragment>
-              <div className={"answer-session"}></div>
-              {gameState.currentQuestion.Cevap ==
-              ["A", "B", "C", "D"].map(
-                (item) => gameState.currentQuestion[item]
-              )[selectedOption] ? (
-                <div className="display-answer correct-answer">
-                  CORRECT ANSWER!
-                </div>
-              ) : (
-                <div className="display-answer wrong-answer">WRONG ANSWER!</div>
-              )}
-            </Fragment>
+      {isAnswering ? (
+        <Fragment>
+          <div className={"answer-session"}></div>
+          {bcrypt.compareSync(
+            gameState.questions[gameState.currentQuestionNumber - 1].options[
+              selectedOption
+            ],
+            gameState.questions[gameState.currentQuestionNumber - 1]
+              .correctAnswer
+          ) ? (
+            <div className="display-answer correct-answer">CORRECT ANSWER!</div>
           ) : (
-            <></>
+            <div className="display-answer wrong-answer">WRONG ANSWER!</div>
           )}
-          <div className="question-header">
-            <div className="question-situation-box">
-              {gameState.questionNumber} / {gameState.numberOfQuestions}
-            </div>
-            <div className="ranking-box">
-              <img
-                src={rankingLogo}
-                alt="ranking logo"
-                style={{ width: 41, height: 45 }}
-              />
-              <span>{user.ranking}th</span>
-            </div>
-            <div className="time-box">{Math.ceil(countdownDuration)}s</div>
+        </Fragment>
+      ) : (
+        <></>
+      )}
+      <div className={"question-container"}>
+        <div className="question-header">
+          <div className="question-situation-box">
+            {gameState.currentQuestionNumber} / {gameState.questions.length}
           </div>
-          <div className="question-box">
-            <div className="question-context">
-              {gameState.currentQuestion.Soru}
-            </div>
+          <div className="ranking-box">
+            <img
+              src={rankingLogo}
+              alt="ranking logo"
+              style={{ width: 41, height: 45 }}
+            />
+            <span>
+              {convertRanking(
+                gameState.participants
+                  .map((item) => item.user._id)
+                  .indexOf(user._id) + 1
+              )}
+            </span>
           </div>
-          <div className="options-container">
-            {["A", "B", "C", "D"]
-              .map((item) => gameState.currentQuestion[item])
-              .map((item, index) => {
-                return (
-                  <div
-                    className={
-                      "option" +
-                      (selectedOption === index ? " selected-option" : "") +
-                      (isAnswering &&
-                      ((gameState.currentQuestion.Cevap == item &&
-                        selectedOption == index) ||
-                        (gameState.currentQuestion.Cevap == item &&
-                          selectedOption != index))
-                        ? " correct-answer"
-                        : isAnswering &&
-                          selectedOption == index &&
-                          gameState.currentQuestion.Cevap !=
-                            ["A", "B", "C", "D"].map(
-                              (item) => gameState.currentQuestion[item]
-                            )[selectedOption]
-                        ? " wrong-answer"
-                        : "")
-                    }
-                    key={index + "?" + item}
-                    onClick={(e) => handleSelection(index)}
-                  >
-                    {item}
-                  </div>
-                );
-              })}
+          <div className="time-box">{Math.ceil(countdownDuration)}s</div>
+        </div>
+        <div className="question-box">
+          <div className="question-context">
+            {gameState.questions[gameState.currentQuestionNumber - 1].question}
           </div>
         </div>
-      )}
+        <div className="options-container">
+          {gameState.questions[gameState.currentQuestionNumber - 1].options.map(
+            (item, index) => {
+              return (
+                <div
+                  className={
+                    "option" + generateQuestionResultClassName(index, item)
+                  }
+                  key={index + "?" + item}
+                  onClick={(e) => handleSelection(index)}
+                >
+                  {item}
+                </div>
+              );
+            }
+          )}
+        </div>
+      </div>
     </Fragment>
   );
 };
