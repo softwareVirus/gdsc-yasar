@@ -5,25 +5,16 @@ const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
-const passport = require("passport");
 const session = require("express-session");
-const mongoose = require("mongoose");
-const MongoStore = require("connect-mongo");
+const firebaseAdmin = require("firebase-admin");
+const serviceAccount = require("./path/to/serviceAccountKey.json"); // Your Firebase service account key JSON file
 const cors = require("cors");
 const helmet = require("helmet");
 const bodyParser = require("body-parser");
-const connectionString =
-  process.env.MONGODB_CONNECTION_STRING || "mongodb://localhost";
 
-mongoose.set("debug", true);
-
-mongoose
-  .connect(connectionString, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("Database connection established."))
-  .catch((e) => console.log(e, "dsadsadsa"));
+firebaseAdmin.initializeApp({
+  credential: firebaseAdmin.credential.cert(serviceAccount),
+});
 
 const app = express();
 const httpServer = require("http").createServer(app);
@@ -31,6 +22,7 @@ require("./socket-connection")(app, httpServer);
 const authRouter = require("./routes/auth");
 const gameRouter = require("./routes/game");
 const questionRouter = require("./routes/question");
+
 app.use(
   cors({
     origin: true,
@@ -52,16 +44,11 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.json());
 app.use(
   session({
-    secret: "keyboard cat",
+    secret: "your-secret-key",
     resave: false,
     saveUninitialized: false,
-    store: new MongoStore({
-      mongoUrl: connectionString,
-      stringify: false,
-    }),
   })
 );
-app.use(passport.session());
 app.use("/auth", authRouter);
 app.use("/game", gameRouter);
 app.use("/question", questionRouter);
@@ -85,6 +72,8 @@ app.use(function (err, req, res, next) {
   res.render("error");
 });
 
-httpServer.listen(3000);
-app.listen(3005, (port) => console.log("listen", port));
+httpServer.listen(3000, () => {
+  console.log("HTTP server listening on port 3000");
+});
+
 module.exports = app;

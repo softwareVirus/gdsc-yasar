@@ -1,3 +1,39 @@
+const firebaseAdmin = require("firebase-admin");
+
+const ensureSession = (req, res, next) => {
+  const sessionCookie = req.cookies.session || '';
+  firebaseAdmin
+    .auth()
+    .verifySessionCookie(sessionCookie, true /** checkRevoked */)
+    .then((decodedClaims) => {
+      req.user = decodedClaims;
+      return next();
+    })
+    .catch((error) => {
+      console.error('Error verifying session cookie:', error);
+      return res.status(401).send('Unauthorized');
+    });
+};
+
+const ensureAdmin = (req, res, next) => {
+  const sessionCookie = req.cookies.session || '';
+  firebaseAdmin
+    .auth()
+    .verifySessionCookie(sessionCookie, true /** checkRevoked */)
+    .then((decodedClaims) => {
+      if (decodedClaims.admin) {
+        req.user = decodedClaims;
+        return next();
+      } else {
+        return res.status(401).send('Unauthorized');
+      }
+    })
+    .catch((error) => {
+      console.error('Error verifying session cookie:', error);
+      return res.status(401).send('Unauthorized');
+    });
+};
+
 const signupReturnData = {
   firstName: 1,
   lastName: 1,
@@ -7,29 +43,13 @@ const signupReturnData = {
   _id: 1,
 };
 
-const saltRounds = 10;
-
 const filterUser = (user) => {
-  // return user data according to signupReturnData object properties
   let newUser = {};
   Object.keys(signupReturnData).map((item) => (newUser[item] = user[item]));
   return newUser;
 };
 
-function ensureSession(req, res, next) {
-  console.log(req.user, req.isAuthenticated(), req.session, req.isAuthenticated);
-  if (req.isAuthenticated && req.isAuthenticated()) return next();
-
-  return res.send(401, "Unauthorized");
-}
-
-function ensureAdmin(req, res, next) {
-  console.log(req.user, req.isAuthenticated(), req.session);
-  if (req.isAuthenticated && req.isAuthenticated() && req.user.isAdmin)
-    return next();
-
-  return res.send(401, "Unauthorized");
-}
+const saltRounds = 10;
 
 module.exports = {
   ensureSession,
